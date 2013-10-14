@@ -1,0 +1,56 @@
+# The C:/StellarisWare directory
+ROOT=C:/StellarisWare
+
+# Where the driver library is
+DRIVERLIBDIR=${ROOT}/driverlib/gcc-cm3
+
+# Where the OLED driver is
+OLEDDIR=${ROOT}/boards/ek-lm3s6965
+
+# Where my EGR424 folder is
+HOME=C:/chirag/GVSUcourses/Summer13/EGR424
+
+# Where MY_GPIO driver is
+MYGPIODIR=${HOME}/Quizzes/Quiz6_July18/MusicSynthesizer
+
+# The basic compiler command and flags
+CC=arm-none-eabi-gcc \
+   -Wall \
+   -Os \
+   -march=armv7-m -mcpu=cortex-m3 -mthumb -mfix-cortex-m3-ldrd \
+   -ffunction-sections -fdata-sections \
+   -std=c99 -Wall -pedantic -DPART_LM3S6965 -Dgcc \
+   -I${ROOT} \
+   -I${OLEDDIR} \
+   -I${MYGPIODIR} \
+   -L${DRIVERLIBDIR}
+
+# What directories contain sources and targets (besides the
+# current directory)
+#VPATH=${OLEDDIR}
+
+
+# This creates the .BIN file once the .ELF file is created
+gcc/MusicSynthesizer.bin: gcc/MusicSynthesizer.elf
+	arm-none-eabi-objcopy -O binary gcc/MusicSynthesizer.elf gcc/MusicSynthesizer.bin
+
+# This creates the .ELF file if any of the dependencies change
+gcc/MusicSynthesizer.elf: MusicSynthesizer.c startup_gcc.c timer0_driver.c pwm_driver.c
+	${CC} -o gcc/MusicSynthesizer.elf \
+	      MusicSynthesizer.c startup_gcc.c \
+	      ${OLEDDIR}/drivers/rit128x96x4.c \
+              ${MYGPIODIR}/timer0_driver.c \
+			${MYGPIODIR}/pwm_driver.c \
+              -ldriver-cm3 \
+	      -T MusicSynthesizer.ld \
+	      --entry ResetISR \
+	      -Wl,--gc-sections \
+	     
+
+# This "pseudo-target" removes the target and intermediate files
+.PHONY: clean
+clean:
+	rm -rf gcc
+	mkdir gcc
+
+# vim: noexpandtab
